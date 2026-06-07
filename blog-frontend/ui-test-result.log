@@ -1,0 +1,51 @@
+===== Blog System 14 Steps UI/Feature Test =====
+Time: 2026/6/7 21:43:12
+Frontend: http://localhost:5173
+Backend: http://localhost:8081/api
+
+--- Step 1: Home Page ---
+Step 1 [SUCCESS] Home Page Layout - HTTP=200, Articles=4, Categories=5, Tags=10, Author=博客管理员
+--- Step 2: Article Detail ---
+Step 2 [SUCCESS] Click First Article Detail - ArticleID=4, Title=Element Plus组件库使用, PageHTTP=200
+--- Step 3: Search Spring ---
+Step 3 [SUCCESS] Search Spring - Results=1/1, Total=4
+--- Step 4: Filter by Category ---
+Step 4 [SUCCESS] Filter by Category - Category=Java开发(id=1), Results=1, AllMatch=true
+--- Step 5: Filter by Tag ---
+Step 5 [SUCCESS] Filter by Tag - Tag=SpringBoot(id=1), Results=1
+--- Step 6: Message Board ---
+Step 6 [SUCCESS] Message Board Page - PageHTTP=200, Messages=1
+--- Step 7: About Me ---
+Step 7 [SUCCESS] About Me Page - PageHTTP=200, Author=博客管理员
+--- Step 8: Admin Login Page ---
+Step 8 [SUCCESS] Admin Login Page - PageHTTP=200
+--- Step 9: Admin Login ---
+Step 9 [SUCCESS] Admin Login admin/123456 - code=200, hasToken=true
+--- Step 10: Dashboard ---
+Step 10 [SUCCESS] Dashboard Stats - Articles=4, Comments=4, Categories=5, Tags=10
+--- Step 11: Admin Article List ---
+Step 11 [SUCCESS] Admin Article List - Count=4/4
+--- Step 12: Admin Category List ---
+Step 12 [SUCCESS] Admin Category List - Count=5
+--- Step 13: Admin Tag List ---
+Step 13 [SUCCESS] Admin Tag List - Count=10
+--- Step 14: Admin Comment List ---
+Step 14 [SUCCESS] Admin Comment List - Count=4/4
+
+===== Test Summary =====
+PASS Step 1: Home Page Layout - HTTP=200, Articles=4, Categories=5, Tags=10, Author=博客管理员
+PASS Step 2: Click First Article Detail - ArticleID=4, Title=Element Plus组件库使用, PageHTTP=200
+PASS Step 3: Search Spring - Results=1/1, Total=4
+PASS Step 4: Filter by Category - Category=Java开发(id=1), Results=1, AllMatch=true
+PASS Step 5: Filter by Tag - Tag=SpringBoot(id=1), Results=1
+PASS Step 6: Message Board Page - PageHTTP=200, Messages=1
+PASS Step 7: About Me Page - PageHTTP=200, Author=博客管理员
+PASS Step 8: Admin Login Page - PageHTTP=200
+PASS Step 9: Admin Login admin/123456 - code=200, hasToken=true
+PASS Step 10: Dashboard Stats - Articles=4, Comments=4, Categories=5, Tags=10
+PASS Step 11: Admin Article List - Count=4/4
+PASS Step 12: Admin Category List - Count=5
+PASS Step 13: Admin Tag List - Count=10
+PASS Step 14: Admin Comment List - Count=4/4
+
+Total: PASS=14, FAIL=0, Steps=14
