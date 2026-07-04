@@ -134,7 +134,7 @@ public class BlogController {
                 }
             }
         }
-        return Result.success(commentService.pageFront(dto, userId));
+        return Result.success(commentService.pageFrontWithTree(dto, userId));
     }
 
     /** 提交评论/留言 - 默认进入待审核状态 */

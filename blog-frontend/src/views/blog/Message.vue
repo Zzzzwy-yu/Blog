@@ -10,11 +10,12 @@
               v-model="form.content"
               type="textarea"
               :rows="3"
-              placeholder="想说什么就说什么吧..."
+              :placeholder="replyTarget ? '回复 ' + replyTarget.nickname + ' 的留言...' : '想说什么就说什么吧...'"
               maxlength="500"
               show-word-limit
             />
             <div style="margin-top:12px;text-align:right;">
+              <el-button v-if="replyTarget" size="small" @click="cancelReply">取消回复</el-button>
               <el-button type="primary" @click="submitMsg">发表留言</el-button>
             </div>
           </el-form>
@@ -38,6 +39,31 @@
               >
                 ❤ {{ m.likeCount || 0 }}
               </span>
+              <span v-if="userStore.token" class="comment-action" @click="replyTo(m)">
+                💬 回复
+              </span>
+            </div>
+            <div v-if="m.children && m.children.length > 0" class="comment-replies">
+              <div v-for="child in m.children" :key="child.id" class="comment-reply">
+                <span class="comment-avatar-small">{{ getInitial(child.nickname) }}</span>
+                <div class="comment-reply-body">
+                  <span class="comment-user">{{ child.nickname }}</span>
+                  <span class="comment-time">{{ formatDate(child.createTime) }}</span>
+                  <div class="comment-content">{{ child.content }}</div>
+                  <div class="comment-actions">
+                    <span
+                      class="comment-action"
+                      @click="handleLike(child)"
+                      :style="{ color: child.liked ? '#ef4444' : '#909399' }"
+                    >
+                      ❤ {{ child.likeCount || 0 }}
+                    </span>
+                    <span v-if="userStore.token" class="comment-action" @click="replyTo(child)">
+                      💬 回复
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -73,11 +99,12 @@ import { ElMessage } from 'element-plus'
 const router = useRouter()
 const userStore = useUserStore()
 
-const form = ref({ content: '' })
+const form = ref({ content: '', parentId: null })
 const messageList = ref([])
 const pageNum = ref(1)
 const total = ref(0)
 const profile = ref({})
+const replyTarget = ref(null)
 
 const initial = computed(() => {
   const name = profile.value.nickname || 'B'
@@ -107,14 +134,25 @@ const fetchProfile = () => {
   })
 }
 
+const replyTo = (message) => {
+  replyTarget.value = message
+  form.value.parentId = message.id
+}
+
+const cancelReply = () => {
+  replyTarget.value = null
+  form.value.parentId = null
+}
+
 const submitMsg = () => {
   if (!form.value.content) {
     ElMessage.warning('请填写留言内容')
     return
   }
-  submitComment({ content: form.value.content }).then(() => {
+  submitComment({ content: form.value.content, parentId: form.value.parentId }).then(() => {
     ElMessage.success('留言成功,等待审核')
-    form.value = { content: '' }
+    form.value = { content: '', parentId: null }
+    replyTarget.value = null
     pageNum.value = 1
     fetchMessages()
   })
@@ -160,8 +198,25 @@ onMounted(() => {
   justify-content: center;
   flex-shrink: 0;
 }
+.comment-avatar-small {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
 .comment-body {
   margin-left: 12px;
+  flex: 1;
+}
+.comment-reply-body {
+  margin-left: 8px;
   flex: 1;
 }
 .comment-user {
@@ -190,5 +245,17 @@ onMounted(() => {
 }
 .comment-action:hover {
   opacity: 0.7;
+}
+.comment-replies {
+  margin-top: 12px;
+  padding-left: 24px;
+  border-left: 2px solid #e4e7ed;
+}
+.comment-reply {
+  display: flex;
+  padding: 10px 0;
+}
+.comment-reply:not(:last-child) {
+  border-bottom: 1px dashed #f0f0f0;
 }
 </style>

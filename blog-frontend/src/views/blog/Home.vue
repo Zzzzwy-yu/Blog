@@ -93,9 +93,9 @@
     <!-- 侧栏 -->
     <aside class="blog-side">
       <!-- 个人卡片 -->
-      <div class="card profile-card">
+      <div class="card profile-card" v-if="profile">
         <div class="profile-avatar">{{ initial }}</div>
-        <div class="profile-name">{{ profile.nickname || '博主' }}</div>
+        <div class="profile-name">{{ profile.nickname }}</div>
         <div class="profile-bio">{{ profile.bio || '欢迎访问我的技术博客' }}</div>
         <div class="profile-stats">
           <div class="profile-stat">
@@ -167,7 +167,7 @@ const total = ref(0)
 const articleList = ref([])
 const categoryList = ref([])
 const tagList = ref([])
-const profile = ref({})
+const profile = ref(null)
 const likedMap = ref({})
 
 const currentCategoryId = ref(null)
@@ -176,6 +176,7 @@ const currentCategoryName = ref('')
 const currentTagName = ref('')
 
 const initial = computed(() => {
+  if (!profile.value) return ''
   const name = profile.value.nickname || 'B'
   return name.charAt(0).toUpperCase()
 })

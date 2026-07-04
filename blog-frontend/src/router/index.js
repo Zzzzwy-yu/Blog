@@ -9,7 +9,7 @@ const routes = [
       { path: '', name: 'home', component: () => import('@/views/blog/Home.vue'), meta: { title: '首页' } },
       { path: 'article/:id', name: 'articleDetail', component: () => import('@/views/blog/ArticleDetail.vue'), meta: { title: '文章详情' } },
       { path: 'message', name: 'message', component: () => import('@/views/blog/Message.vue'), meta: { title: '留言板' } },
-      { path: 'about', name: 'about', component: () => import('@/views/blog/About.vue'), meta: { title: '关于我' } }
+      { path: 'about', name: 'about', component: () => import('@/views/blog/About.vue'), meta: { title: '关于作者' } }
     ]
   },
   // 用户登录注册

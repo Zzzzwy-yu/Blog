@@ -105,13 +105,22 @@ public class CommentServiceImpl implements CommentService {
     public void submit(CommentDTO dto, String ip, String userAgent) {
         Comment comment = new Comment();
         comment.setArticleId(dto.getArticleId());
-        comment.setParentId(dto.getParentId());
+
+        Long parentId = dto.getParentId();
+        if (parentId != null) {
+            Comment parentComment = commentMapper.selectById(parentId);
+            if (parentComment != null && parentComment.getParentId() != null) {
+                parentId = parentComment.getParentId();
+            }
+        }
+        comment.setParentId(parentId);
+
         comment.setNickname(dto.getNickname());
         comment.setEmail(dto.getEmail());
         comment.setContent(dto.getContent());
         comment.setIp(ip);
         comment.setUserAgent(userAgent);
-        comment.setStatus(1); // 默认已通过，无需审核
+        comment.setStatus(1);
         comment.setCreateTime(LocalDateTime.now());
         comment.setUpdateTime(LocalDateTime.now());
         commentMapper.insert(comment);
@@ -166,38 +175,59 @@ public class CommentServiceImpl implements CommentService {
     @Override
     public PageResult<Comment> pageFrontWithTree(CommentQueryDTO dto, Long userId) {
         dto.setStatus(1);
-        LambdaQueryWrapper<Comment> wrapper = new LambdaQueryWrapper<>();
+        LambdaQueryWrapper<Comment> rootWrapper = new LambdaQueryWrapper<>();
         if (dto.getArticleId() != null) {
-            wrapper.eq(Comment::getArticleId, dto.getArticleId());
+            rootWrapper.eq(Comment::getArticleId, dto.getArticleId());
         } else if (Boolean.TRUE.equals(dto.getOnlyMsg())) {
-            wrapper.isNull(Comment::getArticleId);
+            rootWrapper.isNull(Comment::getArticleId);
         }
-        wrapper.eq(Comment::getStatus, 1);
-        wrapper.orderByDesc(Comment::getCreateTime);
+        rootWrapper.eq(Comment::getStatus, 1);
+        rootWrapper.isNull(Comment::getParentId);
+        rootWrapper.orderByDesc(Comment::getCreateTime);
 
         IPage<Comment> page = new Page<>(
                 dto.getPageNum() == null ? 1 : dto.getPageNum(),
                 dto.getPageSize() == null ? 10 : dto.getPageSize());
 
-        IPage<Comment> result = commentMapper.selectPage(page, wrapper);
-        java.util.List<Comment> allComments = result.getRecords();
+        IPage<Comment> rootResult = commentMapper.selectPage(page, rootWrapper);
+        java.util.List<Comment> rootComments = rootResult.getRecords();
 
-        Map<Long, Comment> commentMap = new java.util.HashMap<>();
-        java.util.List<Comment> rootComments = new java.util.ArrayList<>();
-
-        for (Comment c : allComments) {
-            commentMap.put(c.getId(), c);
+        for (Comment c : rootComments) {
             c.setChildren(new java.util.ArrayList<>());
             if (c.getArticleId() != null) {
                 c.setArticleTitle(commentMapper.selectArticleTitleById(c.getArticleId()));
             }
         }
 
-        for (Comment c : allComments) {
-            if (c.getParentId() != null && commentMap.containsKey(c.getParentId())) {
-                commentMap.get(c.getParentId()).getChildren().add(c);
-            } else {
-                rootComments.add(c);
+        if (!rootComments.isEmpty()) {
+            java.util.List<Long> rootIds = new java.util.ArrayList<>();
+            for (Comment c : rootComments) {
+                rootIds.add(c.getId());
+            }
+
+            LambdaQueryWrapper<Comment> childWrapper = new LambdaQueryWrapper<>();
+            childWrapper.in(Comment::getParentId, rootIds);
+            childWrapper.eq(Comment::getStatus, 1);
+            childWrapper.orderByAsc(Comment::getCreateTime);
+
+            java.util.List<Comment> childComments = commentMapper.selectList(childWrapper);
+
+            Map<Long, Comment> rootMap = new java.util.HashMap<>();
+            for (Comment c : rootComments) {
+                rootMap.put(c.getId(), c);
+            }
+
+            for (Comment child : childComments) {
+                if (rootMap.containsKey(child.getParentId())) {
+                    rootMap.get(child.getParentId()).getChildren().add(child);
+                }
+            }
+        }
+
+        java.util.List<Comment> allComments = new java.util.ArrayList<>(rootComments);
+        for (Comment root : rootComments) {
+            if (root.getChildren() != null) {
+                allComments.addAll(root.getChildren());
             }
         }
 
@@ -214,7 +244,6 @@ public class CommentServiceImpl implements CommentService {
             }
         }
 
-        result.setRecords(rootComments);
-        return PageResult.of(result);
+        return PageResult.of(rootResult);
     }
 }
