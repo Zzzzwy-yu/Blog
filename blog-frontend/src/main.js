@@ -4,9 +4,16 @@ import ElementPlus from 'element-plus'
 import './style.css'
 import 'element-plus/dist/index.css'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
+import { $typst, loadFonts } from '@myriaddreamin/typst.ts'
 
 import App from './App.vue'
 import router from './router'
+
+$typst.use({
+  key: 'access-model',
+  forRoles: ['compiler'],
+  provides: [loadFonts([], { assets: ['text', 'cjk'] })],
+})
 
 const app = createApp(App)
 

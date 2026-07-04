@@ -32,6 +32,10 @@
           <el-icon><ChatDotRound /></el-icon>
           <span>留言评论</span>
         </el-menu-item>
+        <el-menu-item index="/admin/user">
+          <el-icon><User /></el-icon>
+          <span>用户管理</span>
+        </el-menu-item>
         <el-menu-item index="/admin/password">
           <el-icon><Lock /></el-icon>
           <span>修改密码</span>
@@ -63,6 +67,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { getAdminInfo, adminLogout } from '@/api'
+import { User } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const route = useRoute()

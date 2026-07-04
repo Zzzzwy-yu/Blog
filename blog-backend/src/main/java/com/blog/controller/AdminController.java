@@ -219,6 +219,18 @@ public class AdminController {
         return Result.success();
     }
 
+    // ============ 用户管理 ============
+    @GetMapping("/user/list")
+    public Result<PageResult<com.blog.entity.User>> userList(com.blog.dto.PageQueryDTO dto) {
+        return Result.success(userService.pageList(dto));
+    }
+
+    @PostMapping("/user/status/{id}/{status}")
+    public Result<Void> userStatus(@PathVariable Long id, @PathVariable Integer status) {
+        userService.updateStatus(id, status);
+        return Result.success();
+    }
+
     // ============ 留言/评论管理 ============
     @GetMapping("/comment/list")
     public Result<PageResult<Comment>> commentList(CommentQueryDTO dto) {

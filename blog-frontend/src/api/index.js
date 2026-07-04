@@ -25,6 +25,38 @@ export const submitComment = data =>
 export const getProfile = () =>
   request.get('/blog/profile')
 
+// 用户注册
+export const userRegister = data =>
+  request.post('/blog/user/register', data)
+
+// 用户登录
+export const userLogin = data =>
+  request.post('/blog/user/login', data)
+
+// 获取当前用户信息
+export const getUserInfo = () =>
+  request.get('/blog/user/info')
+
+// 更新用户信息
+export const updateUserInfo = data =>
+  request.post('/blog/user/update', data)
+
+// 点赞/取消点赞
+export const toggleLike = articleId =>
+  request.post('/blog/article/like/' + articleId)
+
+// 检查点赞状态
+export const getLikeStatus = articleId =>
+  request.get('/blog/article/like/status/' + articleId)
+
+// 评论点赞/取消点赞
+export const toggleCommentLike = commentId =>
+  request.post('/blog/comment/like/' + commentId)
+
+// 检查评论点赞状态
+export const getCommentLikeStatus = commentId =>
+  request.get('/blog/comment/like/status/' + commentId)
+
 // 后台接口
 export const adminLogin = data =>
   request.post('/admin/login', data)
@@ -98,3 +130,22 @@ export const rejectComment = id =>
 
 export const deleteComment = id =>
   request.post('/admin/comment/delete/' + id)
+
+// 用户管理
+export const getAdminUserList = params =>
+  request.get('/admin/user/list', { params })
+
+export const updateUserStatus = (id, status) =>
+  request.post('/admin/user/status/' + id + '/' + status)
+
+// 图片管理
+export const uploadImage = file => {
+  const formData = new FormData()
+  formData.append('file', file)
+  return request.post('/admin/image/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+}
+
+export const deleteImage = id =>
+  request.post('/admin/image/delete/' + id)

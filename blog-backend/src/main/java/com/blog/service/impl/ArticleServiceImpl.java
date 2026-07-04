@@ -10,8 +10,10 @@ import com.blog.dto.ArticleDTO;
 import com.blog.dto.ArticleQueryDTO;
 import com.blog.entity.Article;
 import com.blog.entity.ArticleTag;
+import com.blog.entity.Comment;
 import com.blog.mapper.ArticleMapper;
 import com.blog.mapper.ArticleTagMapper;
+import com.blog.mapper.CommentMapper;
 import com.blog.service.ArticleService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +37,9 @@ public class ArticleServiceImpl implements ArticleService {
 
     @Resource
     private ArticleTagMapper articleTagMapper;
+
+    @Resource
+    private CommentMapper commentMapper;
 
     @Override
     public PageResult<Article> pageFront(ArticleQueryDTO dto) {
@@ -75,12 +80,13 @@ public class ArticleServiceImpl implements ArticleService {
         }
 
         IPage<Article> result = articleMapper.selectPage(page, wrapper);
-        // 填充标签 + 分类名（用 articleMapper 原生 SQL，避免自定义 SQL 导致的 500）
+        // 填充标签 + 分类名 + 评论数（用 articleMapper 原生 SQL，避免自定义 SQL 导致的 500）
         result.getRecords().forEach(a -> {
             a.setTagList(articleMapper.selectTagsByArticleId(a.getId()));
             if (a.getCategoryId() != null) {
                 a.setCategoryName(articleMapper.selectCategoryNameByArticleId(a.getId()));
             }
+            a.setCommentCount(commentMapper.countByArticleId(a.getId()));
         });
         return PageResult.of(result);
     }
@@ -118,6 +124,7 @@ public class ArticleServiceImpl implements ArticleService {
         article.setTitle(dto.getTitle());
         article.setSummary(dto.getSummary());
         article.setContent(dto.getContent());
+        article.setContentType(dto.getContentType() == null ? "markdown" : dto.getContentType());
         article.setCoverImage(dto.getCoverImage());
         article.setCategoryId(dto.getCategoryId());
         article.setAuthor("admin");
@@ -145,6 +152,9 @@ public class ArticleServiceImpl implements ArticleService {
         exist.setTitle(dto.getTitle());
         exist.setSummary(dto.getSummary());
         exist.setContent(dto.getContent());
+        if (dto.getContentType() != null) {
+            exist.setContentType(dto.getContentType());
+        }
         exist.setCoverImage(dto.getCoverImage());
         exist.setCategoryId(dto.getCategoryId());
         exist.setStatus(dto.getStatus() == null ? exist.getStatus() : dto.getStatus());
@@ -179,6 +189,9 @@ public class ArticleServiceImpl implements ArticleService {
         if (exist == null) {
             throw new BusinessException(ResultCode.DATA_NOT_EXIST);
         }
+        LambdaQueryWrapper<Comment> commentWrapper = new LambdaQueryWrapper<>();
+        commentWrapper.eq(Comment::getArticleId, id);
+        commentMapper.delete(commentWrapper);
         articleTagMapper.deleteByArticleId(id);
         articleMapper.deleteById(id);
     }

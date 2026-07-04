@@ -12,6 +12,9 @@ const routes = [
       { path: 'about', name: 'about', component: () => import('@/views/blog/About.vue'), meta: { title: '关于我' } }
     ]
   },
+  // 用户登录注册
+  { path: '/user/login', name: 'userLogin', component: () => import('@/views/blog/Login.vue'), meta: { title: '用户登录' } },
+  { path: '/user/register', name: 'userRegister', component: () => import('@/views/blog/Register.vue'), meta: { title: '用户注册' } },
   // 后台登录
   { path: '/admin/login', name: 'adminLogin', component: () => import('@/views/admin/Login.vue'), meta: { title: '后台登录' } },
   // 后台
@@ -27,6 +30,7 @@ const routes = [
       { path: 'category', name: 'adminCategory', component: () => import('@/views/admin/CategoryList.vue'), meta: { title: '分类管理' } },
       { path: 'tag', name: 'adminTag', component: () => import('@/views/admin/TagList.vue'), meta: { title: '标签管理' } },
       { path: 'comment', name: 'adminComment', component: () => import('@/views/admin/CommentList.vue'), meta: { title: '留言评论管理' } },
+      { path: 'user', name: 'adminUser', component: () => import('@/views/admin/UserList.vue'), meta: { title: '用户管理' } },
       { path: 'password', name: 'adminPassword', component: () => import('@/views/admin/Password.vue'), meta: { title: '修改密码' } }
     ]
   }

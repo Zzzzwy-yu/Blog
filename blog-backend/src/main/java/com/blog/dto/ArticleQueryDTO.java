@@ -3,8 +3,6 @@ package com.blog.dto;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import java.io.Serializable;
-
 /**
  * 文章查询DTO
  *
@@ -13,7 +11,7 @@ import java.io.Serializable;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class ArticleQueryDTO extends PageQueryDTO implements Serializable {
+public class ArticleQueryDTO extends PageQueryDTO {
 
     private static final long serialVersionUID = 1L;
 

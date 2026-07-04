@@ -58,6 +58,13 @@
             </span>
             <span style="margin-left:12px;">👁 {{ article.viewCount || 0 }}</span>
             <span style="margin-left:12px;">💬 {{ article.commentCount || 0 }}</span>
+            <span
+              style="margin-left:12px;cursor:pointer;"
+              @click="handleLike(article, $event)"
+              :style="{ color: likedMap[article.id] ? '#ef4444' : '#909399' }"
+            >
+              ❤ {{ article.likeCount || 0 }}
+            </span>
           </div>
           <p class="article-summary">{{ article.summary }}</p>
           <div v-if="article.tagList && article.tagList.length" class="article-tags">
@@ -143,11 +150,14 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useUserStore } from '@/store/user'
 import {
-  getArticleList, getCategoryList, getTagList, getProfile
+  getArticleList, getCategoryList, getTagList, getProfile, toggleLike, getLikeStatus
 } from '@/api'
+import { ElMessage } from 'element-plus'
 
 const router = useRouter()
+const userStore = useUserStore()
 
 const loading = ref(false)
 const keyword = ref('')
@@ -158,6 +168,7 @@ const articleList = ref([])
 const categoryList = ref([])
 const tagList = ref([])
 const profile = ref({})
+const likedMap = ref({})
 
 const currentCategoryId = ref(null)
 const currentTagId = ref(null)
@@ -250,6 +261,29 @@ const clearTag = () => {
 
 const goDetail = id => {
   router.push('/article/' + id)
+}
+
+const handleLike = (article, event) => {
+  event.stopPropagation()
+  if (!userStore.token) {
+    ElMessage.warning('请先登录')
+    router.push('/user/login')
+    return
+  }
+  toggleLike(article.id).then(res => {
+    article.likeCount = res.likeCount
+    likedMap.value[article.id] = res.liked
+  })
+}
+
+const fetchLikeStatus = () => {
+  if (!userStore.token) return
+  articleList.value.forEach(article => {
+    getLikeStatus(article.id).then(res => {
+      likedMap.value[article.id] = res.liked
+      article.likeCount = res.likeCount
+    })
+  })
 }
 
 onMounted(() => {

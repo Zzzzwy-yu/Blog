@@ -31,6 +31,9 @@ public class ArticleDTO implements Serializable {
     @NotBlank(message = "内容不能为空")
     private String content;
 
+    /** 内容类型: markdown/typst */
+    private String contentType = "markdown";
+
     private String coverImage;
 
     /** 分类ID */

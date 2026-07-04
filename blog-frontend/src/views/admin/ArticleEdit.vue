@@ -31,15 +31,31 @@
           <el-radio :value="0">下架(草稿)</el-radio>
         </el-radio-group>
       </el-form-item>
+      <el-form-item label="内容类型">
+        <el-select v-model="form.contentType" placeholder="请选择内容类型" style="width:200px;">
+          <el-option label="Markdown" value="markdown" />
+          <el-option label="Typst" value="typst" />
+        </el-select>
+      </el-form-item>
       <el-form-item label="内容" prop="content">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
+          <el-button size="small" type="primary" @click="uploadImage">
+            <el-icon><Upload /></el-icon> 上传图片
+          </el-button>
+        </div>
         <el-input
           v-model="form.content"
           type="textarea"
           :rows="16"
-          placeholder="支持 Markdown 语法..."
+          :placeholder="form.contentType === 'typst' ? '支持 Typst 语法...' : '支持 Markdown 语法...'"
         />
         <div style="color:#909399;font-size:12px;margin-top:4px;">
-          💡 支持标准 Markdown 语法,可在前台预览效果
+          <template v-if="form.contentType === 'markdown'">
+            💡 支持标准 Markdown 语法,可在前台预览效果
+          </template>
+          <template v-else>
+            💡 支持 Typst 语法,可在前台渲染为排版精美的文档
+          </template>
         </div>
       </el-form-item>
       <el-form-item>
@@ -47,15 +63,24 @@
         <el-button @click="$router.push('/admin/article')">取消</el-button>
       </el-form-item>
     </el-form>
+
+    <input
+      ref="fileInput"
+      type="file"
+      accept="image/*"
+      style="display:none;"
+      @change="handleFileChange"
+    />
   </el-card>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { Upload } from '@element-plus/icons-vue'
 import {
   saveArticle, updateArticle, getAdminArticleDetail,
-  getAdminCategoryList, getAdminTagList
+  getAdminCategoryList, getAdminTagList, uploadImage as uploadApi
 } from '@/api'
 import { ElMessage } from 'element-plus'
 
@@ -63,6 +88,7 @@ const route = useRoute()
 const router = useRouter()
 const formRef = ref()
 const loading = ref(false)
+const fileInput = ref()
 const articleId = route.query.id
 
 const form = reactive({
@@ -70,6 +96,7 @@ const form = reactive({
   title: '',
   summary: '',
   content: '',
+  contentType: 'markdown',
   categoryId: null,
   tagIds: [],
   status: 1
@@ -103,10 +130,47 @@ const loadArticle = () => {
     form.title = a.title
     form.summary = a.summary
     form.content = a.content
+    form.contentType = a.contentType || 'markdown'
     form.categoryId = a.categoryId
     form.status = a.status
     form.tagIds = (a.tagList || []).map(t => t.id)
   })
+}
+
+const uploadImage = () => {
+  fileInput.value?.click()
+}
+
+const handleFileChange = async (e) => {
+  const file = e.target.files?.[0]
+  if (!file) return
+
+  const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp']
+  const ext = file.name.split('.').pop().toLowerCase()
+  if (!imageExts.includes(ext)) {
+    ElMessage.warning('不支持的图片格式')
+    return
+  }
+
+  if (file.size > 10 * 1024 * 1024) {
+    ElMessage.warning('图片大小不能超过10MB')
+    return
+  }
+
+  try {
+    const res = await uploadApi(file)
+    const url = res.url
+    if (form.contentType === 'markdown') {
+      form.content += `\n![${file.name}](${url})\n`
+    } else {
+      form.content += `\nimage("${url}", width: 100%)\n`
+    }
+    ElMessage.success('图片上传成功并已插入')
+  } catch (err) {
+    ElMessage.error('图片上传失败')
+  }
+
+  e.target.value = ''
 }
 
 const submit = () => {

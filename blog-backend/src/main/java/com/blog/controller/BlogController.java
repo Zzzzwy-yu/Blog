@@ -6,23 +6,34 @@ import com.blog.common.Result;
 import com.blog.dto.ArticleQueryDTO;
 import com.blog.dto.CommentDTO;
 import com.blog.dto.CommentQueryDTO;
+import com.blog.dto.LoginDTO;
+import com.blog.dto.RegisterDTO;
+import com.blog.dto.UserInfoDTO;
 import com.blog.entity.Article;
 import com.blog.entity.Category;
 import com.blog.entity.Comment;
 import com.blog.entity.Tag;
+import com.blog.entity.User;
 import com.blog.mapper.ArticleMapper;
 import com.blog.mapper.CommentMapper;
+import com.blog.service.ArticleLikeService;
 import com.blog.service.ArticleService;
 import com.blog.service.CategoryService;
+import com.blog.service.CommentLikeService;
 import com.blog.service.CommentService;
 import com.blog.service.TagService;
 import com.blog.service.UserService;
+import com.blog.utils.JwtUtil;
+import com.blog.vo.LoginVO;
 import com.blog.vo.ProfileVO;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.annotation.Resource;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 前台接口控制器
@@ -49,6 +60,15 @@ public class BlogController {
 
     @Resource
     private UserService userService;
+
+    @Resource
+    private ArticleLikeService articleLikeService;
+
+    @Resource
+    private CommentLikeService commentLikeService;
+
+    @Resource
+    private JwtUtil jwtUtil;
 
     @Resource
     private ArticleMapper articleMapper;
@@ -82,21 +102,60 @@ public class BlogController {
 
     /** 评论列表 (按文章) */
     @GetMapping("/comment/list")
-    public Result<PageResult<Comment>> commentList(CommentQueryDTO dto) {
-        return Result.success(commentService.pageFront(dto));
+    public Result<PageResult<Comment>> commentList(CommentQueryDTO dto, HttpServletRequest request) {
+        Long userId = null;
+        String token = request.getHeader("Authorization");
+        if (token != null && token.startsWith("Bearer ")) {
+            token = token.substring(7);
+            String username = jwtUtil.getUsernameFromToken(token);
+            if (username != null) {
+                User user = userService.getByUsername(username);
+                if (user != null) {
+                    userId = user.getId();
+                }
+            }
+        }
+        return Result.success(commentService.pageFrontWithTree(dto, userId));
     }
 
     /** 留言列表 */
     @GetMapping("/message/list")
-    public Result<PageResult<Comment>> messageList(CommentQueryDTO dto) {
+    public Result<PageResult<Comment>> messageList(CommentQueryDTO dto, HttpServletRequest request) {
         dto.setOnlyMsg(true);
-        return Result.success(commentService.pageFront(dto));
+        Long userId = null;
+        String token = request.getHeader("Authorization");
+        if (token != null && token.startsWith("Bearer ")) {
+            token = token.substring(7);
+            String username = jwtUtil.getUsernameFromToken(token);
+            if (username != null) {
+                User user = userService.getByUsername(username);
+                if (user != null) {
+                    userId = user.getId();
+                }
+            }
+        }
+        return Result.success(commentService.pageFront(dto, userId));
     }
 
     /** 提交评论/留言 - 默认进入待审核状态 */
     @PostMapping("/comment/submit")
     public Result<Void> submitComment(@RequestBody CommentDTO dto,
                                       HttpServletRequest request) {
+        String token = request.getHeader("Authorization");
+        if (token == null || !token.startsWith("Bearer ")) {
+            return Result.error("请先登录");
+        }
+        token = token.substring(7);
+        String username = jwtUtil.getUsernameFromToken(token);
+        if (username == null) {
+            return Result.error("请先登录");
+        }
+        User user = userService.getByUsername(username);
+        if (user == null) {
+            return Result.error("用户不存在");
+        }
+        dto.setNickname(user.getNickname());
+        dto.setEmail(user.getEmail());
         String ip = getClientIp(request);
         String userAgent = request.getHeader("User-Agent");
         commentService.submit(dto, ip, userAgent);
@@ -137,6 +196,139 @@ public class BlogController {
         }
         vo.setTotalView(totalView);
         return Result.success(vo);
+    }
+
+    /** 用户注册 */
+    @PostMapping("/user/register")
+    public Result<Void> register(@Valid @RequestBody RegisterDTO dto) {
+        userService.register(dto);
+        return Result.success();
+    }
+
+    /** 用户登录 */
+    @PostMapping("/user/login")
+    public Result<LoginVO> userLogin(@Valid @RequestBody LoginDTO dto) {
+        return Result.success(userService.userLogin(dto));
+    }
+
+    /** 获取当前登录用户信息 */
+    @GetMapping("/user/info")
+    public Result<User> getUserInfo(HttpServletRequest request) {
+        String token = request.getHeader("Authorization");
+        if (token != null && token.startsWith("Bearer ")) {
+            token = token.substring(7);
+            String username = jwtUtil.getUsernameFromToken(token);
+            if (username != null) {
+                User user = userService.getByUsername(username);
+                if (user != null) {
+                    user.setPassword(null);
+                }
+                return Result.success(user);
+            }
+        }
+        return Result.success(null);
+    }
+
+    /** 更新用户信息 */
+    @PostMapping("/user/update")
+    public Result<Void> updateUserInfo(@Valid @RequestBody UserInfoDTO dto,
+                                       HttpServletRequest request) {
+        String token = request.getHeader("Authorization");
+        if (token != null && token.startsWith("Bearer ")) {
+            token = token.substring(7);
+            String username = jwtUtil.getUsernameFromToken(token);
+            if (username != null) {
+                User user = userService.getByUsername(username);
+                if (user != null) {
+                    userService.updateUserInfo(user.getId(), dto);
+                }
+            }
+        }
+        return Result.success();
+    }
+
+    /** 点赞/取消点赞 */
+    @PostMapping("/article/like/{id}")
+    public Result<Map<String, Object>> toggleLike(@PathVariable Long id,
+                                                  HttpServletRequest request) {
+        String token = request.getHeader("Authorization");
+        if (token != null && token.startsWith("Bearer ")) {
+            token = token.substring(7);
+            String username = jwtUtil.getUsernameFromToken(token);
+            if (username != null) {
+                User user = userService.getByUsername(username);
+                if (user != null) {
+                    articleLikeService.toggleLike(id, user.getId());
+                    int likeCount = articleLikeService.getLikeCount(id);
+                    boolean liked = articleLikeService.isLiked(id, user.getId());
+                    Map<String, Object> result = new HashMap<>();
+                    result.put("likeCount", likeCount);
+                    result.put("liked", liked);
+                    return Result.success(result);
+                }
+            }
+        }
+        return Result.error("请先登录");
+    }
+
+    /** 检查文章是否已点赞 */
+    @GetMapping("/article/like/status/{id}")
+    public Result<Map<String, Object>> getLikeStatus(@PathVariable Long id,
+                                                     HttpServletRequest request) {
+        String token = request.getHeader("Authorization");
+        boolean liked = false;
+        if (token != null && token.startsWith("Bearer ")) {
+            token = token.substring(7);
+            String username = jwtUtil.getUsernameFromToken(token);
+            if (username != null) {
+                User user = userService.getByUsername(username);
+                if (user != null) {
+                    liked = articleLikeService.isLiked(id, user.getId());
+                }
+            }
+        }
+        int likeCount = articleLikeService.getLikeCount(id);
+        Map<String, Object> result = new HashMap<>();
+        result.put("likeCount", likeCount);
+        result.put("liked", liked);
+        return Result.success(result);
+    }
+
+    /** 评论点赞/取消点赞 */
+    @PostMapping("/comment/like/{id}")
+    public Result<Map<String, Object>> toggleCommentLike(@PathVariable Long id,
+                                                        HttpServletRequest request) {
+        String token = request.getHeader("Authorization");
+        if (token != null && token.startsWith("Bearer ")) {
+            token = token.substring(7);
+            String username = jwtUtil.getUsernameFromToken(token);
+            if (username != null) {
+                User user = userService.getByUsername(username);
+                if (user != null) {
+                    return Result.success(commentLikeService.toggleLike(id, user.getId()));
+                }
+            }
+        }
+        return Result.error("请先登录");
+    }
+
+    /** 检查评论是否已点赞 */
+    @GetMapping("/comment/like/status/{id}")
+    public Result<Map<String, Object>> getCommentLikeStatus(@PathVariable Long id,
+                                                           HttpServletRequest request) {
+        Long userId = null;
+        String token = request.getHeader("Authorization");
+        if (token != null && token.startsWith("Bearer ")) {
+            token = token.substring(7);
+            String username = jwtUtil.getUsernameFromToken(token);
+            if (username != null) {
+                User user = userService.getByUsername(username);
+                if (user != null) {
+                    userId = user.getId();
+                }
+            }
+        }
+        return Result.success(commentLikeService.getLikeStatus(id, userId));
     }
 
     private String getClientIp(HttpServletRequest request) {

@@ -1,0 +1,1 @@
+ALTER TABLE t_article ADD COLUMN content_type VARCHAR(20) DEFAULT 'markdown' COMMENT '内容类型' AFTER content;

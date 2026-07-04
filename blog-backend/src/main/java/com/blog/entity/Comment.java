@@ -46,6 +46,9 @@ public class Comment implements Serializable {
     /** 用户代理 */
     private String userAgent;
 
+    /** 点赞数 */
+    private Integer likeCount;
+
     /** 状态 0-待审核 1-已通过 2-已拒绝 */
     private Integer status;
 
@@ -58,6 +61,14 @@ public class Comment implements Serializable {
     /** 文章标题(非表字段) */
     @TableField(exist = false)
     private String articleTitle;
+
+    /** 子评论列表(非表字段) */
+    @TableField(exist = false)
+    private java.util.List<Comment> children;
+
+    /** 被点赞状态(非表字段) */
+    @TableField(exist = false)
+    private Boolean liked;
 
     @TableField(exist = false)
     private Integer deleted;

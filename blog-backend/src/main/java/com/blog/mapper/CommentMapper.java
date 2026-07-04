@@ -20,4 +20,10 @@ public interface CommentMapper extends BaseMapper<Comment> {
      */
     @Select("SELECT title FROM t_article WHERE id = #{articleId}")
     String selectArticleTitleById(@Param("articleId") Long articleId);
+
+    /**
+     * 根据文章ID统计有效评论数
+     */
+    @Select("SELECT COUNT(*) FROM t_comment WHERE article_id = #{articleId} AND status = 1")
+    int countByArticleId(@Param("articleId") Long articleId);
 }

@@ -42,4 +42,14 @@ public interface CommentService {
      * 审核拒绝
      */
     void reject(Long id);
+
+    /**
+     * 获取评论树(带点赞状态)
+     */
+    PageResult<Comment> pageFrontWithTree(CommentQueryDTO dto, Long userId);
+
+    /**
+     * 分页查询(前台-已通过,带点赞状态)
+     */
+    PageResult<Comment> pageFront(CommentQueryDTO dto, Long userId);
 }

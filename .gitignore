@@ -1,3 +1,5 @@
 node_modules/
+target/
+dist/
+*.jar
 .DS_Store
-.vscode/

@@ -32,8 +32,11 @@ public class Article implements Serializable {
     /** 摘要 */
     private String summary;
 
-    /** 内容(Markdown) */
+    /** 内容(Markdown/Typst) */
     private String content;
+
+    /** 内容类型: markdown/typst */
+    private String contentType;
 
     /** 封面图片 */
     private String coverImage;
